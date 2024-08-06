@@ -1,0 +1,79 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  RENTER
+  ADMIN
+}
+
+enum UserStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+
+model User {
+   id          Int      @id @default(autoincrement())
+  email       String   @unique
+  password    String
+  avatar      String[]
+  phoneNumber String
+  location    String
+  role      Role
+  status    UserStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  books     Book[]   @relation("OwnedBooks")
+  rentals   Rental[] @relation("UserRentals")
+  wallet    Float    @default(0) // Amount of money in the owner's wallet
+}
+
+enum BookApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Book {
+  id             Int        @id @default(autoincrement())
+  title          String
+  details        String
+  author         String
+  category       String[]
+  ownerId        Int
+  owner          User       @relation("OwnedBooks", fields: [ownerId], references: [id])
+  rented         Boolean   @default(false)
+  quantity       Int
+  price          Float
+  pictures          String[]
+  rentals        Rental[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  approvalStatus BookApprovalStatus @default(PENDING)
+}
+
+model Rental {
+  id          Int      @id @default(autoincrement())
+  bookId      Int
+  renterId    Int
+  rentalDate  DateTime @default(now())
+  returnDate  DateTime?
+  book        Book     @relation(fields: [bookId], references: [id])
+  renter      User     @relation("UserRentals", fields: [renterId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
